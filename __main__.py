@@ -9,6 +9,7 @@ def dither(x:int, y:int, i:float, v:float, base:int) -> int:
 def main():
 	image=Image.open("test.png")
 	width=image.width
+	height=image.height
 
 	pixels=tuple(image.getdata())
 
@@ -29,7 +30,7 @@ def main():
 
 	#print(result_colors)
 	# Destination image.
-	result=Image.new('RGB',(256,256))
+	result=Image.new('RGB',(width,height))
 	result.putdata(result_colors)
 	result.show()
 

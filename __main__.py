@@ -13,7 +13,6 @@ def main():
 
 	pixels=tuple(image.getdata())
 
-
 	# Create list of values from red (since it's a greyscale image).
 	intensities=[x[0] for x in pixels]
 	#print(intensities)

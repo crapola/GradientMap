@@ -1,3 +1,5 @@
+import concurrent.futures
+import time
 from PIL import Image
 import config
 
@@ -28,6 +30,17 @@ def print_value_range(image):
 	values=tuple(image.getdata())
 	print(f"Value range: {(min(values),max(values))}.")
 
+def work(values_chunk,width):
+	result_colors=[None]*len(values_chunk)
+	for i,x in enumerate(values_chunk):
+		v=x/255.0
+		red=dither(i%width,int(i/width),v,config.size[0],config.base[0])
+		green=dither(i%width,int(i/width),v,config.size[1],config.base[1])
+		blue=dither(i%width,int(i/width),v,config.size[2],config.base[2])
+		color=(int(red),int(green),int(blue))
+		result_colors[i]=color
+	return result_colors
+
 def main():
 	image=Image.open("source.png").convert("L")
 	print_value_range(image)
@@ -36,13 +49,17 @@ def main():
 	values=tuple(image.getdata())
 	width=image.width
 	height=image.height
-	for i,x in enumerate(values):
-		v=x/255.0
-		red=dither(i%width,int(i/width),v,config.size[0],config.base[0])
-		green=dither(i%width,int(i/width),v,config.size[1],config.base[1])
-		blue=dither(i%width,int(i/width),v,config.size[2],config.base[2])
-		color=(int(red),int(green),int(blue))
-		result_colors.append(color)
+
+	time_spent=time.time()
+	with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
+		n=len(values)//8
+		chunks=[values[i:i+n] for i in range(0,len(values),n)]
+		future=[executor.submit(work,c,width) for c in chunks]
+		result_colors=[f.result() for f in future]
+
+	time_spent=time.time()-time_spent
+	result_colors=sum(result_colors,[])
+	print(f"Time elapsed:{time_spent} seconds.")
 	# Save destination image.
 	result=Image.new('RGB',image.size)
 	result.putdata(result_colors)

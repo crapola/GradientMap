@@ -14,19 +14,17 @@ def main():
 	values=tuple(image.getdata())
 	width=image.width
 	height=image.height
+	# Pixels and indices as numpy arrays.
 	v=np.array(values)/255.0
 	i=np.arange(len(v))
 	# Dithering.
 	k=np.array((0,2,3,1))
 	thresholds=np.take(k,i%2+2*((i//width)%2))/4.0-0.5
-	# Channels.
-	rs=(config.base[0]+config.size[0]*v+thresholds).astype(int)
-	gs=(config.base[1]+config.size[1]*v+thresholds).astype(int)
-	bs=(config.base[2]+config.size[2]*v+thresholds).astype(int)
-	reds=rs.tolist()
-	greens=gs.tolist()
-	blues=bs.tolist()
-	result_colors=tuple(zip(reds,greens,blues))
+	# Create colors.
+	params=np.array((config.base,config.size)).reshape(2,3,1)
+	rgb=(params[0]+params[1]*v+thresholds).astype(int)
+	rgb=np.stack(rgb,1)
+	result_colors=[tuple(x) for x in rgb.tolist()]
 	# Save destination image.
 	result=Image.new('RGB',image.size)
 	result.putdata(result_colors)
